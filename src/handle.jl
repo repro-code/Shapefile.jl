@@ -56,10 +56,13 @@ end
 
 function _read_handle_inner(io::IO, ::Type{T}, header, shapes, index=nothing; path) where T
     shapes = Vector{Union{T,Missing}}(undef, 0)
-    num = Int32(0)
+    # Count the records instead of using the stored record numbers:
+    # the n-th entry of the .shx is the n-th record
+    num = 0
     while (!eof(io))
         seeknext(io, num, index)
-        num = bswap(read(io, Int32))
+        num += 1
+        read(io, Int32) # the stored record number
         rlength = bswap(read(io, Int32))
         shapecode = read(io, Int32)
         if shapecode === Int32(0)

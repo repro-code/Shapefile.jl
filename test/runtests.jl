@@ -181,6 +181,17 @@ end
 
 @testset "Loading Shapefiles" begin
 
+# The .shx gives the order of the records, whatever numbers the .shp stores for them
+path = joinpath(@__DIR__, "shapelib_testcases", "test1.shp")
+index = open(io -> read(io, Shapefile.IndexHandle), replace(path, ".shp" => ".shx"))
+bytes = read(path)
+for (record, number) in zip(index.indices, (2, 1))
+    start = record.offset * 2
+    bytes[start+1:start+4] = reinterpret(UInt8, [hton(Int32(number))])
+end
+renumbered = read(IOBuffer(bytes), Shapefile.Handle, index)
+@test Shapefile.shapes(renumbered) == Shapefile.shapes(Shapefile.Handle(path))
+
 for test in test_tuples
     for shx in (:manual, :auto, :none)
         shp = if shx == :manual
