@@ -50,8 +50,25 @@ Base.length(shp::Handle) = length(shapes(shp))
 
 function Base.read(io::IO, ::Type{Handle}, index = nothing; path = nothing)
     header = read(io, Header)
-    T = SHAPETYPE[header.shapecode]
-    _read_handle_inner(io::IO, T, header, shapes, index; path)
+    read_shapes(::Type{T}) where {T} = _read_handle_inner(io::IO, T, header, shapes, index; path)
+    # One call per shape type, instead of looking the type up in SHAPETYPE, so the
+    # compiler knows every call. This is needed to compile with `juliac --trim`.
+    code = header.shapecode
+    return code == 0 ? read_shapes(Missing) :
+        code == 1 ? read_shapes(Point) :
+        code == 3 ? read_shapes(Polyline) :
+        code == 5 ? read_shapes(Polygon) :
+        code == 8 ? read_shapes(MultiPoint) :
+        code == 11 ? read_shapes(PointZ) :
+        code == 13 ? read_shapes(PolylineZ) :
+        code == 15 ? read_shapes(PolygonZ) :
+        code == 18 ? read_shapes(MultiPointZ) :
+        code == 21 ? read_shapes(PointM) :
+        code == 23 ? read_shapes(PolylineM) :
+        code == 25 ? read_shapes(PolygonM) :
+        code == 28 ? read_shapes(MultiPointM) :
+        code == 31 ? read_shapes(MultiPatch) :
+        throw(KeyError(code))
 end
 
 function _read_handle_inner(io::IO, ::Type{T}, header, shapes, index=nothing; path) where T
