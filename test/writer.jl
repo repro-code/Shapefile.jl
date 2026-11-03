@@ -143,6 +143,15 @@
         @test t.geometry == [Point(0,0) for i in 1:10]
     end
 
+    @testset "force=true replaces the crs" begin
+        file = tempname()
+        crs = GeoFormatTypes.ESRIWellKnownText(GeoFormatTypes.CRS(), "GEOGCS[\"WGS 84\"]")
+        Shapefile.write(file, Shapefile.Writer([Point(0,0)], Shapefile.emptytable(1), crs))
+        @test GeoInterface.crs(Shapefile.Handle(file * ".shp")) == crs
+        Shapefile.write(file, Point(1,1); force=true)
+        @test isnothing(GeoInterface.crs(Shapefile.Handle(file * ".shp")))
+    end
+
     @testset "geometrycolumn kwarg" begin
         # A table whose geometry column is not named `:geometry`.
         table = (; G = [Point(0,0), Point(1,1), Point(2,2)], V = [10, 20, 30])

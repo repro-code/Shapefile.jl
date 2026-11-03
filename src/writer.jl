@@ -120,6 +120,8 @@ function write(path::AbstractString, o::Writer; force=false)
     if isfile(paths.shp)
         if force
             rm(paths.shp)
+            # Without a new crs, the old .prj would describe the new file
+            rm(paths.prj; force=true)
         else
             throw(ArgumentError("File already exists at `$(paths.shp)`. Use `force=true` to write anyway."))
         end
