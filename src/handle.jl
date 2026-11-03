@@ -83,6 +83,9 @@ function _read_handle_inner(io::IO, ::Type{T}, header, shapes, index=nothing; pa
 end
 
 function seeknext(io, num, index::IndexHandle)
-    seek(io, index.indices[num + 1].offset * 2)
+    offset = index.indices[num + 1].offset * 2
+    # Records usually follow each other, and seeking an IOStream empties its buffer
+    position(io) == offset || seek(io, offset)
+    return nothing
 end
 seeknext(io, num, ::Nothing) = nothing

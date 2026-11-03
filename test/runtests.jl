@@ -265,6 +265,19 @@ for test in test_tuples
 
 end
 
+# Records are read from the .shx offsets, also when they don't follow each other
+path = joinpath(@__DIR__, "shapelib_testcases", "test1.shp")
+index = open(io -> read(io, Shapefile.IndexHandle), replace(path, ".shp" => ".shx"))
+first_record, second_record = index.indices
+gap = 4 # bytes
+bytes = read(path)
+second_start = second_record.offset * 2
+bytes_with_gap = [bytes[1:second_start]; zeros(UInt8, gap); bytes[second_start+1:end]]
+index_with_gap = Shapefile.IndexHandle(index.header, [first_record,
+    Shapefile.IndexRecord(second_record.offset + gap ÷ 2, second_record.contentlen)])
+shp_with_gap = read(IOBuffer(bytes_with_gap), Shapefile.Handle, index_with_gap)
+@test Shapefile.shapes(shp_with_gap) == Shapefile.shapes(Shapefile.Handle(path))
+
 end  # @testset "Loading Shapefiles"
 
 include("table.jl")
