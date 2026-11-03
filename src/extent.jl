@@ -1,6 +1,6 @@
-const Shape = Union{AbstractShape,LinearRing{Point},SubPolygon{<:LinearRing{Point}}}
-const ShapeZ = Union{PolylineZ,PolygonZ,MultiPointZ,MultiPatch,LinearRing{PointZ},SubPolygon{<:LinearRing{PointZ}}}
-const ShapeM = Union{PolylineM,PolygonM,MultiPointM,LinearRing{PointM},SubPolygon{<:LinearRing{PointM}}}
+const Shape = Union{AbstractShape,LineString{Point},LinearRing{Point},SubPolygon{<:LinearRing{Point}}}
+const ShapeZ = Union{PolylineZ,PolygonZ,MultiPointZ,MultiPatch,LineString{PointZ},LinearRing{PointZ},SubPolygon{<:LinearRing{PointZ}}}
+const ShapeM = Union{PolylineM,PolygonM,MultiPointM,LineString{PointM},LinearRing{PointM},SubPolygon{<:LinearRing{PointM}}}
 
 # 3d
 GI.is3d(::GI.AbstractGeometryTrait, ::Union{Shape,ShapeM}) = false

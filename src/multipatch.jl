@@ -23,8 +23,11 @@ struct MultiPatch <: AbstractShape
 end
 
 GI.geomtrait(::MultiPatch) = GI.GeometryCollectionTrait()
-GI.ngeom(geom::MultiPatch) = length(geom.parts)
-GeoInterface.ncoord(::MultiPatch) = 3
+GI.ngeom(::GI.GeometryCollectionTrait, geom::MultiPatch) = length(geom.parts)
+GI.ncoord(::GI.GeometryCollectionTrait, ::MultiPatch) = 3
+# MultiPatch has z values but no measures
+GI.coordnames(::GI.GeometryCollectionTrait, ::MultiPatch) = (:X, :Y, :Z)
+GI.ismeasured(::GI.GeometryCollectionTrait, ::MultiPatch) = false
 
 function GI.getgeom(::GI.GeometryCollectionTrait, geom::MultiPatch, i::Integer)
     error("`getgeom` not implemented for `MultiPatch`: open a github issue at JuliaGeo/Shapefile.jl if you need this.")

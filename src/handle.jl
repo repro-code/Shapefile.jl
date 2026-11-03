@@ -40,7 +40,12 @@ shapes(h::Handle) = h.shapes
 # GeoInterface
 GI.isgeometry(::Type{<:Handle}) = true
 GI.geomtrait(::Handle) = GI.GeometryCollectionTrait()
-GI.ncoord(::GI.GeometryCollectionTrait, h::Handle) = GI.ncoord(first(h.shapes))
+# All shapes in a file have the same coordinates, so use the first one that is not missing
+function GI.coordnames(::GI.GeometryCollectionTrait, h::Handle)
+    i = findfirst(!ismissing, h.shapes)
+    return isnothing(i) ? (:X, :Y) : GI.coordnames(h.shapes[i])
+end
+GI.ncoord(t::GI.GeometryCollectionTrait, h::Handle) = length(GI.coordnames(t, h))
 GI.ngeom(::GI.GeometryCollectionTrait, h::Handle) = length(h.shapes)
 GI.getgeom(::GI.GeometryCollectionTrait, h::Handle, i) = h.shapes[i]
 GI.getgeom(::GI.GeometryCollectionTrait, h::Handle) = h.shapes

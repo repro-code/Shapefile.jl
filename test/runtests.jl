@@ -175,8 +175,41 @@ test_shapes = Dict(
     @test GeoInterface.testgeometry(linearring)
     @test GeoInterface.extent(subpolygon) == Extents.Extent(X=(1.0, 2.0), Y=(3.0, 4.0))
 
+    # Lines, polygons and rings have the same coordinates as their parent shape
+    for T in (Polyline, PolylineM, PolylineZ, Polygon, PolygonM, PolygonZ)
+        shape = test_shapes[T]
+        line_or_polygon = getgeom(shape, 1)
+        parts = GeoInterface.trait(line_or_polygon) isa GeoInterface.PolygonTrait ?
+            (line_or_polygon, getgeom(line_or_polygon, 1)) : (line_or_polygon,)
+        for part in parts
+            @test GeoInterface.coordnames(part) == GeoInterface.coordnames(shape)
+            @test GeoInterface.ncoord(part) == GeoInterface.ncoord(shape)
+            @test GeoInterface.is3d(part) == GeoInterface.is3d(shape)
+            @test GeoInterface.ismeasured(part) == GeoInterface.ismeasured(shape)
+            @test GeoInterface.extent(part) isa Extents.Extent
+        end
+    end
+
+    multipatch = MultiPatch(Rect(1, 3, 2, 4), [0], [1], points, Interval(1, 4), [1, 2, 3, 4])
+    @test GeoInterface.coordnames(multipatch) == (:X, :Y, :Z)
+    @test GeoInterface.ncoord(multipatch) == 3
+    @test GeoInterface.is3d(multipatch)
+    @test !GeoInterface.ismeasured(multipatch)
+
     @test GeoInterface.trait(shp) isa GeoInterface.GeometryCollectionTrait
     @test GeoInterface.testgeometry(shp)
+
+    # A Handle has the coordinates of its shapes, skipping missing shapes
+    measured_points = Shapefile.Handle(joinpath("shapelib_testcases", "test3.shp"))
+    @test GeoInterface.coordnames(measured_points) == (:X, :Y, :M)
+    @test GeoInterface.ncoord(measured_points) == 3
+    @test GeoInterface.ismeasured(measured_points)
+    @test !GeoInterface.is3d(measured_points)
+    first_missing = Shapefile.Handle(shp.header, Union{PointZ,Missing}[missing, PointZ(1, 2, 3, 4)], nothing)
+    @test GeoInterface.coordnames(first_missing) == (:X, :Y, :Z, :M)
+    only_missing = Shapefile.Handle(joinpath("shapelib_testcases", "test0.shp"))
+    @test GeoInterface.coordnames(only_missing) == (:X, :Y)
+    @test GeoInterface.ncoord(only_missing) == 2
 end
 
 @testset "Loading Shapefiles" begin
