@@ -169,6 +169,17 @@ test_shapes = Dict(
     @test GeoInterface.extent(test_shapes[PolygonM]) == Extents.Extent(X=(1.0, 2.0), Y=(3.0, 4.0))
     @test GeoInterface.extent(test_shapes[PolygonZ]) == Extents.Extent(X=(1.0, 2.0), Y=(3.0, 4.0), Z=(1.0, 4.0))
 
+    # Rings that are not inside an exterior ring become polygons, and ngeom counts them
+    clockwise_square = [Point(0, 0), Point(0, 1), Point(1, 1), Point(1, 0), Point(0, 0)]
+    counterclockwise_square = [Point(5, 5), Point(6, 5), Point(6, 6), Point(5, 6), Point(5, 5)]
+    lonely_hole = Polygon(Rect(0, 0, 6, 6), [0, 5], [clockwise_square; counterclockwise_square])
+    only_holes = Polygon(Rect(5, 5, 6, 6), [0], counterclockwise_square)
+    for polygon in (lonely_hole, only_holes)
+        @test GeoInterface.ngeom(polygon) == length(GeoInterface.getgeom(polygon))
+    end
+    @test GeoInterface.ngeom(lonely_hole) == 2
+    @test GeoInterface.ngeom(only_holes) == 1
+
     subpolygon = getgeom(test_shapes[Polygon], 1)
     @test GeoInterface.testgeometry(subpolygon)
     linearring = getgeom(subpolygon, 1)

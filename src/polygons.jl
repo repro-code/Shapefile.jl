@@ -66,14 +66,13 @@ GI.geomtrait(geom::AbstractPolygon) = GI.MultiPolygonTrait()
 GI.nring(::GI.MultiPolygonTrait, geom::AbstractPolygon) = length(geom.parts)
 GI.ncoord(::GI.MultiPolygonTrait, geom::AbstractPolygon{T}) where {T} = _ncoord(T)
 GI.npoint(::GI.MultiPolygonTrait, geom::AbstractPolygon) = length(geom.points)
+# Count the polygons that `getgeom` returns, which includes holes that are
+# not inside any exterior ring
 function GI.ngeom(::GI.MultiPolygonTrait, geom::AbstractPolygon)
-    n = 0
-    for ring in GI.getring(geom)
-        if _isclockwise(ring)
-            n += 1
-        end
+    if isempty(geom.indexcache)
+        _build_cache!(geom)
     end
-    return n
+    return length(geom.indexcache)
 end
 
 
