@@ -222,6 +222,22 @@ for test in test_tuples
 end
 
 
+# The .prj file is closed after reading it
+if Sys.islinux()
+    path = tempname()
+    Shapefile.write(path, Point(1, 2))
+    write(path * ".prj", "GEOGCS[\"WGS 84\"]")
+    open_files() = length(readdir("/proc/self/fd"))
+    Base.GC.enable(false) # finalizers would close the file too
+    try
+        n = open_files()
+        Shapefile.Handle(path * ".shp")
+        @test open_files() == n
+    finally
+        Base.GC.enable(true)
+    end
+end
+
 # Test all .shx files; the values in .shx must match the .shp offsets
 test = test_tuples[1]
 for test in test_tuples

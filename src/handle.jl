@@ -73,7 +73,7 @@ function _read_handle_inner(io::IO, ::Type{T}, header, shapes, index=nothing; pa
         prjpath = _shape_paths(path).prj
         if isfile(prjpath)
             try
-                crs = GFT.ESRIWellKnownText(GFT.CRS(), read(open(prjpath), String))
+                crs = GFT.ESRIWellKnownText(GFT.CRS(), read(prjpath, String))
             catch
                 @warn "Projection file $prjpath appears to be corrupted. `nothing` used for `crs`"
             end
