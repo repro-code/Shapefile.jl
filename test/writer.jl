@@ -141,6 +141,23 @@
         Shapefile.write(file, (F() for i in 1:10))
         t = Shapefile.Table(file)
         @test t.geometry == [Point(0,0) for i in 1:10]
+
+        # vector of geometries with missing values
+        file = tempname()
+        Shapefile.write(file, [Point(0,0), missing])
+        t = Shapefile.Table(file)
+        @test isequal(t.geometry, [Point(0,0), missing])
+
+        # Handle
+        handle = Shapefile.Handle(joinpath(@__DIR__, "shapelib_testcases", "test.shp"))
+        file = tempname()
+        Shapefile.write(file, handle)
+        @test Shapefile.shapes(Shapefile.Handle(file * ".shp")) == Shapefile.shapes(handle)
+
+        # empty vector of geometries
+        file = tempname()
+        Shapefile.write(file, Point[])
+        @test isempty(Shapefile.shapes(Shapefile.Handle(file * ".shp")))
     end
 
     @testset "geometrycolumn kwarg" begin

@@ -41,8 +41,8 @@ struct Writer
             crs
         end
 
-        ngeoms = sum(1 for _ in geoms)
-        nfeats = sum(1 for _ in Tables.rows(feats))
+        ngeoms = sum(1 for _ in geoms; init=0)
+        nfeats = sum(1 for _ in Tables.rows(feats); init=0)
 
         ngeoms == nfeats || error("Number of geoms does not match number of features.  Found: $ngeoms ≠ $nfeats.")
 
@@ -57,13 +57,14 @@ emptytable(itr) = [(;all_missing=missing) for _ in itr]
 function get_writer(obj; geometrycolumn = nothing)
     crs = try; GI.crs(obj); catch; nothing; end
 
-    if GI.isgeometry(obj) || ismissing(obj)
+    # A collection is also a geometry, but a shapefile stores its geometries
+    if GI.trait(obj) isa GI.AbstractGeometryCollectionTrait
+        geoms = GI.getgeom(obj)
+        return Writer(geoms, emptytable(geoms), crs)
+    elseif GI.isgeometry(obj) || ismissing(obj)
         return Writer([obj], emptytable(1), crs)
     elseif GI.isfeature(obj)
         return Writer([GI.geometry(obj)], [GI.properties(obj)], crs)
-    elseif GI.trait(obj) isa GI.AbstractGeometryCollectionTrait
-        geoms = GI.getgeom(obj)
-        return Writer(geoms, emptytable(geoms), crs)
     elseif GI.trait(obj) isa GI.AbstractFeatureCollectionTrait
         geoms = map(GI.geometry, GI.getfeature(obj))
         feats = Tables.dictcolumntable(map(GI.properties, GI.getfeature(obj)))
@@ -98,7 +99,7 @@ function get_writer(obj; geometrycolumn = nothing)
         foreach(x -> delete!(tbl, x), unique((gicols..., geomcols..., geometrycolumn)))  # drop all geometry columns
         tbl = isempty(tbl) ? emptytable(geoms) : tbl
         return Writer(geoms, tbl, crs)
-    elseif all(GI.isgeometry, obj)
+    elseif all(x -> ismissing(x) || GI.isgeometry(x), obj)
         return Writer(obj, emptytable(obj), crs)
     elseif all(GI.isfeature, obj)
         return Writer(map(GI.geometry, obj), map(GI.properties, obj), crs)
