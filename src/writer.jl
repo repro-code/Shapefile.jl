@@ -321,12 +321,9 @@ function _write(io::IO, trait::GI.AbstractGeometryTrait, geom; kw...)
             offset += Int32(GI.npoint(part))
         end
     end
-    # write x/y part of points
-    for point in GI.getpoint(geom)
-        x, y = Float64(GI.x(point)), Float64(GI.y(point))
-        bytes += Base.write(io, x)
-        bytes += Base.write(io, y)
-    end
+    # write x/y part of points, all at once since writing single numbers allocates
+    xy = [Point(Float64(GI.x(point)), Float64(GI.y(point))) for point in GI.getpoint(geom)]
+    bytes += Base.write(io, xy)
     # write the other z/m parts if they exist
     b, zrange, mrange = _write_others(io, geom; kw...)
     bytes += b
@@ -402,10 +399,7 @@ function _write_others(f, io, geom)
     end
     range = Interval(low, high)
     bytes = Base.write(io, range)
-    for point in GI.getpoint(geom)
-        m = f(point)
-        bytes += Base.write(io, m)
-    end
+    bytes += Base.write(io, Float64[f(point) for point in GI.getpoint(geom)])
     return bytes, range
 end
 
